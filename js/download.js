@@ -83,6 +83,24 @@ module.exports.retrieve_ficlive_data = async function (
     );
     return;
   }
+  // If bm is empty, treat the entire story as a single "Home" chapter
+  if (data.bm.length === 0) {
+    const home_filename = `${story_directory_path}/chapter_home.json`;
+    const home_url = `https://fiction.live/api/anonkun/chapters/${node_id}/0/999999999999998`;
+    let expect_redownload = false;
+    if (options.force_download_latest) {
+      await utils.delete_file_if_exists(home_filename);
+      expect_redownload = true;
+    } else if (!(await utils.check_if_file_exists(home_filename))) {
+      expect_redownload = true;
+    }
+    if (options.show_output) {
+      const dl_status = expect_redownload ? "(downloading)" : "";
+      console.log(`${folder_name} - Home - ${home_url} ${dl_status}`);
+    }
+    await get_json_data_or_download(home_filename, home_url);
+    return;
+  }
   /** @type {Array<{ bm: utils.NodeChapterData, index: number, filename: string, is_cached: boolean, is_special_chapter: boolean }>} */
   const all_bm_data = [];
   for (let index = 0; index < data.bm.length; ++index) {

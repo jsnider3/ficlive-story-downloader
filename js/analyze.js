@@ -9,19 +9,20 @@ const utils = require("./utils");
 function get_story_metadata_from_node_data(node_data) {
   const chapters = [];
   const extras = [];
-  if (node_data.bm) {
+  if (node_data.bm && node_data.bm.length > 0) {
     for (const chapter of node_data.bm) {
       const raw_title = chapter.title || "";
       const is_special_chapter = raw_title.startsWith("#special ");
       const title = is_special_chapter
         ? raw_title.substring("#special ".length)
         : raw_title;
+      const safe_title = title.replace(/[<>:"/\\|?*]/g, "").replace(/\s+/g, " ").trim();
       const chapter_data = {
         title: title,
         raw_file_name: `chapter_${chapter.id}`,
         output_file_name: is_special_chapter
-          ? `appendix${extras.length + 1}`
-          : `ch${chapters.length + 1}`,
+          ? `appendix${extras.length + 1} - ${safe_title}`
+          : `ch${chapters.length + 1} - ${safe_title}`,
         is_appendix: is_special_chapter,
       };
       if (is_special_chapter) {
@@ -30,6 +31,16 @@ function get_story_metadata_from_node_data(node_data) {
         chapters.push(chapter_data);
       }
     }
+  } else {
+    // No bookmarks — treat all content as a single "Home" chapter
+    const title = node_data.t || "Home";
+    const safe_title = title.replace(/[<>:"/\\|?*]/g, "").replace(/\s+/g, " ").trim();
+    chapters.push({
+      title: title,
+      raw_file_name: "chapter_home",
+      output_file_name: `ch1 - ${safe_title}`,
+      is_appendix: false,
+    });
   }
   return {
     title: node_data.t || "",
